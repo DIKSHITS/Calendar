@@ -43,9 +43,7 @@ const BasicDatePicker = () => {
     }
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('favoriteBirthdays', JSON.stringify(favoriteBirthdays));
-  }, [favoriteBirthdays]);
+
 
   const handleDateChange = async (date) => {
     if (!date) return;
