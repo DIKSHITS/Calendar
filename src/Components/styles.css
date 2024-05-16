@@ -40,15 +40,16 @@ body {
 
 .container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: space-between;
   padding: 20px;
 }
 
-.content-box {
-  margin-top: 20px;
-  width: 100%;
-  max-width: 600px;
+.left-content {
+  width: 60%;
+}
+
+.right-content {
+  width: 35%;
   background-color: #fff;
   padding: 20px;
   border-radius: 8px;
@@ -56,8 +57,10 @@ body {
 }
 
 .search-field {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  width: 10%; /* Make the search field smaller */
 }
+
 
 .bold-text {
   font-weight: bold;

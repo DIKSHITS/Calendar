@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import { Box, Typography, List, ListItem, ListItemText, TextField, IconButton } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-import './styles.css'; // Updated to reference the correct CSS file
+import './styles.css'; // Ensure you have the correct styles imported
 
 // Function to fetch historical data for a given date
 const fetchHistoricalData = async (language, type, month, day) => {
@@ -27,10 +27,7 @@ const fetchHistoricalData = async (language, type, month, day) => {
 };
 
 const formatDate = (date) => {
-  const dt = dayjs(date);
-  const month = dt.month() + 1;
-  const year = dt.year();
-  return `${month}/${year}`;
+  return dayjs(date).format('MMMM D'); // Format date to show month name and day
 };
 
 const BasicDatePicker = () => {
@@ -38,6 +35,17 @@ const BasicDatePicker = () => {
   const [birthdays, setBirthdays] = useState([]);
   const [favoriteBirthdays, setFavoriteBirthdays] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const storedFavorites = localStorage.getItem('favoriteBirthdays');
+    if (storedFavorites) {
+      setFavoriteBirthdays(JSON.parse(storedFavorites));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('favoriteBirthdays', JSON.stringify(favoriteBirthdays));
+  }, [favoriteBirthdays]);
 
   const handleDateChange = async (date) => {
     if (!date) return;
@@ -57,7 +65,8 @@ const BasicDatePicker = () => {
   const formattedDate = selectedDate ? formatDate(selectedDate) : '';
 
   const addToFavorites = (birthday) => {
-    setFavoriteBirthdays((prevFavorites) => [...prevFavorites, birthday]);
+    const newFavorite = { ...birthday, formattedDate };
+    setFavoriteBirthdays((prevFavorites) => [...prevFavorites, newFavorite]);
   };
 
   const removeFromFavorites = (birthday) => {
@@ -67,39 +76,56 @@ const BasicDatePicker = () => {
   };
 
   const isFavorite = (birthday) => {
-    return favoriteBirthdays.some((fav) => fav.text === birthday.text);
+    return favoriteBirthdays.some((fav) => fav.text === birthday.text && fav.formattedDate === formattedDate);
   };
 
   const filteredBirthdays = birthdays.filter((birthday) =>
     birthday.text.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const firstBirthday = filteredBirthdays.length > 0 ? filteredBirthdays[0] : null;
+  const remainingBirthdays = filteredBirthdays.slice(1);
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box className="container">
-        <DemoContainer components={['DatePicker']}>
-          <DatePicker
-            label="Pick a date"
-            value={selectedDate}
-            onChange={handleDateChange}
-          />
-        </DemoContainer>
-        <Box className="content-box">
+        <Box className="left-content">
+          <DemoContainer components={['DatePicker']}>
+            <DatePicker
+              label="Pick a date"
+              value={selectedDate}
+              onChange={handleDateChange}
+            />
+          </DemoContainer>
+          <Typography variant="h5" gutterBottom>
+            Birthdays on {formattedDate}
+          </Typography>
+          <Typography variant="h6" gutterBottom>
+            Search
+          </Typography>
           <TextField
-            label="Search Birthdays"
+            label="Search"
             variant="outlined"
-            fullWidth
+            size="small" // smaller search bar
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-field"
           />
-          <Typography variant="h5" gutterBottom>
-            Birthdays on {formattedDate}
-          </Typography>
           <List>
-            {filteredBirthdays.map((birthday, index) => (
-              <ListItem key={index} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <ListItemText primary={`${birthday.text} - ${birthday.year}`} />
+            {firstBirthday && (
+              <ListItem key="first" sx={{ display: 'flex', justifyContent: 'space-between', fontSize: 'small' }}>
+                <IconButton
+                  onClick={() =>
+                    isFavorite(firstBirthday) ? removeFromFavorites(firstBirthday) : addToFavorites(firstBirthday)
+                  }
+                >
+                  {isFavorite(firstBirthday) ? <StarIcon color="primary" /> : <StarBorderIcon />}
+                </IconButton>
+                <ListItemText primary={`${firstBirthday.text}`} />
+              </ListItem>
+            )}
+            {remainingBirthdays.map((birthday, index) => (
+              <ListItem key={index} sx={{ display: 'flex', justifyContent: 'space-between', fontSize: 'small' }}>
                 <IconButton
                   onClick={() =>
                     isFavorite(birthday) ? removeFromFavorites(birthday) : addToFavorites(birthday)
@@ -107,21 +133,25 @@ const BasicDatePicker = () => {
                 >
                   {isFavorite(birthday) ? <StarIcon color="primary" /> : <StarBorderIcon />}
                 </IconButton>
+                <ListItemText primary={`${birthday.text}`} />
               </ListItem>
             ))}
           </List>
         </Box>
-        <Box className="content-box">
+        <Box className="right-content">
           <Typography variant="h5" gutterBottom>
             Favorite Birthdays
           </Typography>
+          <Typography variant="h6" gutterBottom>
+            {formattedDate}
+          </Typography>
           <List>
             {favoriteBirthdays.map((birthday, index) => (
-              <ListItem key={index}>
+              <ListItem key={index} sx={{ fontSize: 'small' }}>
                 <ListItemText
                   primary={
                     <>
-                      <span className="bold-text">{birthday.text.split(' - ')[0]}</span> - {birthday.year}
+                      <span className="bold-text">{birthday.text.split(' - ')[0]}</span> 
                     </>
                   }
                 />
